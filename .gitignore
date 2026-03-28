@@ -1,0 +1,48 @@
+# ===================================
+# Smart Attendance Management System
+# ===================================
+
+# Node Modules (too big - install with npm install)
+node_modules/
+*/node_modules/
+
+# Environment Variables (contains passwords - never upload!)
+.env
+backend/.env
+frontend/.env
+*.env.local
+
+# React Build Output
+frontend/build/
+build/
+dist/
+
+# Uploaded Files (student face photos - private)
+backend/uploads/
+uploads/
+
+# Log Files
+*.log
+npm-debug.log*
+yarn-debug.log*
+logs/
+
+# OS Generated Files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# VS Code Settings
+.vscode/
+
+# Temporary Files
+*.tmp
+*.temp
+.cache/
+
+# MongoDB Data
+data/
+
+# Zip files
+*.zip
+*.tar.gz

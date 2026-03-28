@@ -1,0 +1,81 @@
+# ============================================================
+# Docker Compose - Smart Attendance System
+# Runs: MongoDB + Backend API + Frontend
+# Usage: docker-compose up --build
+# ============================================================
+
+version: '3.8'
+
+services:
+  # ── MongoDB Database ──────────────────────────────────────
+  mongo:
+    image: mongo:7.0
+    container_name: attendance_mongo
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_DATABASE: smart_attendance
+    volumes:
+      - mongo_data:/data/db       # Persistent data storage
+    ports:
+      - "27017:27017"             # Expose for local debugging (remove in prod)
+    networks:
+      - attendance_network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Backend API (Node.js + Express) ───────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: attendance_backend
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy   # Wait for MongoDB to be ready
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      MONGODB_URI: mongodb://mongo:27017/smart_attendance
+      JWT_SECRET: ${JWT_SECRET:-change_this_secret_in_production_min_32_chars}
+      JWT_EXPIRE: 7d
+      FRONTEND_URL: http://localhost:3000
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@company.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin@123456}
+    volumes:
+      - uploads_data:/app/uploads  # Persistent file uploads
+    ports:
+      - "5000:5000"
+    networks:
+      - attendance_network
+
+  # ── Frontend (React - served by Nginx) ────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: attendance_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      REACT_APP_API_URL: http://localhost:5000/api
+    ports:
+      - "3000:80"                  # React app served on port 3000
+    networks:
+      - attendance_network
+
+# ── Persistent Volumes ────────────────────────────────────────
+volumes:
+  mongo_data:
+    driver: local
+  uploads_data:
+    driver: local
+
+# ── Network ───────────────────────────────────────────────────
+networks:
+  attendance_network:
+    driver: bridge
